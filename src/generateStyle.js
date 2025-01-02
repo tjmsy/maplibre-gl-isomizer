@@ -53,8 +53,10 @@ function generateLayersFromRule(rule, symbols, colors) {
       return {
         id: generateLayerId(index, symbolId, link, linkIndex),
         type: symbol.type,
-        source: link.source,
-        "source-layer": link["source-layer"],
+        ...(link.source ? { source: link.source } : {}),
+        ...(link["source-layer"] ? {"source-layer": link["source-layer"]} : {}),
+        ...(symbol.minzoom ? { minzoom: symbol.minzoom } : {}),
+        ...(symbol.maxzoom ? { maxzoom: symbol.maxzoom } : {}),
         ...(link.filter ? { filter: link.filter } : {}),
         ...(symbol.layout ? { layout: symbol.layout } : {}),
         paint: generateLayerPaint(symbol, hex),
