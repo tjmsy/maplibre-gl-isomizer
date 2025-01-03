@@ -36,6 +36,7 @@ export async function isomizer(mapConfig, projectConfigPath) {
     await addImages(map, svgPalette["svg-palette"]);
     await addSources(map, designPlan.sources);
     await addLayers(map, style.layers);
+    return map;
   } catch (error) {
     console.error("Error during isomizer process:", error);
   }
