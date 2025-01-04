@@ -31,7 +31,11 @@ function getColor(colorKey, colors) {
   const colorIndex = colors[groupIndex][group].findIndex((item) => item[color]);
 
   const hex = colors[groupIndex][group][colorIndex][color].hex;
-  const index = `${groupIndex}-${colorIndex}`;
+
+  const paddedGroupIndex = groupIndex.toString().padStart(2, "0");
+  const paddedColorIndex = colorIndex.toString().padStart(2, "0");
+
+  const index = `${paddedGroupIndex}-${paddedColorIndex}`;
 
   return { hex, index };
 }
@@ -54,7 +58,9 @@ function generateLayersFromRule(rule, symbols, colors) {
         id: generateLayerId(index, symbolId, link, linkIndex),
         type: symbol.type,
         ...(link.source ? { source: link.source } : {}),
-        ...(link["source-layer"] ? {"source-layer": link["source-layer"]} : {}),
+        ...(link["source-layer"]
+          ? { "source-layer": link["source-layer"] }
+          : {}),
         ...(symbol.minzoom ? { minzoom: symbol.minzoom } : {}),
         ...(symbol.maxzoom ? { maxzoom: symbol.maxzoom } : {}),
         ...(link.filter ? { filter: link.filter } : {}),
