@@ -8,11 +8,11 @@ function generateLayerPaint(symbol, hex) {
     paint["fill-color"] = hex;
   }
 
-  if (symbol["line-width(mm)"]) {
-    paint["line-width"] = symbol["line-width(mm)"] * MM_TO_PX;
+  if (symbol.property["line-width(mm)"]) {
+    paint["line-width"] = symbol.property["line-width(mm)"] * MM_TO_PX;
   }
-  if (symbol["line-dasharray(mm)"]) {
-    paint["line-dasharray"] = symbol["line-dasharray(mm)"].map(
+  if (symbol.property["line-dasharray(mm)"]) {
+    paint["line-dasharray"] = symbol.property["line-dasharray(mm)"].map(
       (element) => element * MM_TO_PX
     );
   }
@@ -21,7 +21,7 @@ function generateLayerPaint(symbol, hex) {
 }
 
 function generateLayerId(index, symbolId, link, linkIndex) {
-  return `${index}_${symbolId}_${link.source}_${link["source-layer"]}_${linkIndex}`;
+  return `${index}-${symbolId}-${link.source}-${link["source-layer"]}-${linkIndex}`;
 }
 
 function getColor(colorKey, colors) {
@@ -52,7 +52,7 @@ function generateLayersFromRule(rule, symbols, colors) {
         throw new Error(`Symbol not found for symbol_id: ${symbolId}`);
       }
 
-      const { hex, index } = getColor(symbol["color-key"], colors);
+      const { hex, index } = getColor(symbol.property["color-key"], colors);
 
       return {
         id: generateLayerId(index, symbolId, link, linkIndex),
