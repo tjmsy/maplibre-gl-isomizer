@@ -1,38 +1,61 @@
-import { loadYaml } from "./loadYaml.js";
+async function getSvgText({ file, svg }) {
+  if (typeof svg === "string" && svg.trim()) {
+    return svg;
+  }
+
+  if (file) {
+    const res = await fetch(file);
+    if (!res.ok) {
+      throw new Error(`Failed to fetch SVG: ${file} (${res.status})`);
+    }
+    return await res.text();
+  }
+
+  return null;
+}
+
+async function svgTextToImage(svgText) {
+  const cleaned = svgText.replace(
+    /<!--[\s\S]*?-->|<script[\s\S]*?<\/script>/g,
+    ""
+  );
+
+  const blob = new Blob([cleaned], { type: "image/svg+xml" });
+  const url = URL.createObjectURL(blob);
+
+  try {
+    const img = new Image();
+    img.src = url;
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+    });
+    return img;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
 
 export async function addImages(map, svgPalette) {
-  for (const { id, file } of svgPalette) {
-    let url;
+  for (const { id, file, svg } of svgPalette) {
     try {
-      const svgResponse = await fetch(file);
-      if (!svgResponse.ok) {
-        console.error(`Failed to fetch SVG file: ${file}, status: ${svgResponse.status}`);
+      if (!id) {
+        console.warn("Missing image id. Skipping entry:", { file, svg });
         continue;
       }
-      const svgText = await svgResponse.text();
-      const cleanedSvgText = svgText.replace(
-        /<!--[\s\S]*?-->|\<script[\s\S]*?<\/script>/g,
-        ""
-      );
-      const blob = new Blob([cleanedSvgText], { type: "image/svg+xml" });
-      const url = URL.createObjectURL(blob);
 
-      const img = new Image();
-      img.src = url;
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = (e) => {
-          console.error("Image load error:", e);
-          reject(e);
-        };
-      });
-      map.addImage(id, img);
-    } catch (error) {
-      console.error(`Error processing SVG with id ${id}:`, error);
-    } finally {
-      if (url) {
-        URL.revokeObjectURL(url);
+      if (map.hasImage(id)) {
+        console.warn(`Image id '${id}' already exists. Skipping.`);
+        continue;
       }
+
+      const svgText = await getSvgText({ file, svg });
+      if (!svgText) continue;
+
+      const img = await svgTextToImage(svgText);
+      map.addImage(id, img);
+    } catch (e) {
+      console.error(`Error processing SVG with id ${id}:`, e);
     }
   }
 }
