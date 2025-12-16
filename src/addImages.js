@@ -1,9 +1,28 @@
-async function getSvgText({ file, svg }) {
+async function getSvgText({ url, file, svg }) {
+  if (svg && (url || file)) {
+    console.warn("Both 'svg' and 'url/file' are provided. 'svg' will be used.");
+  }
+
+  if (url && file) {
+    console.warn(
+      "Both 'url' and deprecated 'file' are provided. 'url' will be used."
+    );
+  }
+
   if (typeof svg === "string" && svg.trim()) {
     return svg;
   }
 
+  if (url) {
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`Failed to fetch SVG: ${url} (${res.status})`);
+    }
+    return await res.text();
+  }
+
   if (file) {
+    console.warn("The 'file' field is deprecated. Please use 'url' instead.");
     const res = await fetch(file);
     if (!res.ok) {
       throw new Error(`Failed to fetch SVG: ${file} (${res.status})`);
@@ -37,10 +56,10 @@ async function svgTextToImage(svgText) {
 }
 
 export async function addImages(map, svgPalette) {
-  for (const { id, file, svg } of svgPalette) {
+  for (const { id, svg, url, file } of svgPalette) {
     try {
       if (!id) {
-        console.warn("Missing image id. Skipping entry:", { file, svg });
+        console.warn("Missing image id. Skipping entry:", { svg, url, file });
         continue;
       }
 
@@ -49,7 +68,7 @@ export async function addImages(map, svgPalette) {
         continue;
       }
 
-      const svgText = await getSvgText({ file, svg });
+      const svgText = await getSvgText({ svg, url, file });
       if (!svgText) continue;
 
       const img = await svgTextToImage(svgText);
