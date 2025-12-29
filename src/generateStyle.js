@@ -1,6 +1,11 @@
 const MM_TO_PX = 3.8; // (96 DPI)
 const withIf = (cond, obj) => (cond ? obj : {});
 
+function mmToPx(mm, precision = 1) {
+  const factor = 10 ** precision;
+  return Math.round(mm * MM_TO_PX * factor) / factor;
+}
+
 function getColor(colorKey, colors) {
   const [group, color] = colorKey.split(".");
 
@@ -55,15 +60,18 @@ function resolveLayerStyle(symbol, hex) {
     case "line": {
       paint["line-color"] = hex;
 
-      if (symbol.property["line-width(mm)"]) {
-        paint["line-width"] = symbol.property["line-width(mm)"] * MM_TO_PX;
+      if (symbol.type === "line") {
+        if (symbol.property["line-width(mm)"]) {
+          paint["line-width"] = mmToPx(symbol.property["line-width(mm)"]);
+        }
+
+        if (symbol.property["line-dasharray(mm)"]) {
+          paint["line-dasharray"] = symbol.property["line-dasharray(mm)"].map(
+            (v) => mmToPx(v)
+          );
+        }
       }
 
-      if (symbol.property["line-dasharray(mm)"]) {
-        paint["line-dasharray"] = symbol.property["line-dasharray(mm)"].map(
-          (v) => v * MM_TO_PX
-        );
-      }
       break;
     }
 
@@ -80,7 +88,7 @@ function resolveLayerStyle(symbol, hex) {
       }
 
       if (symbol.property["icon-size(mm)"]) {
-        layout["icon-size"] = symbol.property["icon-size(mm)"] * MM_TO_PX;
+        layout["icon-size"] = mmToPx(symbol.property["icon-size(mm)"]);
       }
       break;
     }
