@@ -13,10 +13,7 @@ export async function isomizer(map, projectConfigPath) {
         loadYaml(projectConfig.resources["design-plan"].file),
         loadYaml(projectConfig.resources["symbol-palette"].file),
         loadYaml(projectConfig.resources["color-palette"].file),
-        loadYaml(
-          projectConfig.resources["image-palette"]?.file ??
-            projectConfig.resources["svg-palette"]?.file
-        ),
+        loadYaml(projectConfig.resources["image-palette"].file),
       ]);
 
     const style = await generateStyle(
@@ -26,10 +23,7 @@ export async function isomizer(map, projectConfigPath) {
       colorPalette["color-palette"]
     );
 
-    await addImages(
-      map,
-      imagePalette["image-palette"] ?? imagePalette["svg-palette"]
-    );
+    await addImages(map, imagePalette["image-palette"]);
     await addSources(map, designPlan.sources);
     await addLayers(map, style.layers);
 
