@@ -1,36 +1,18 @@
-async function getSvgText({ url, file, svg }) {
-  if (svg && (url || file)) {
-    console.warn("Both 'svg' and 'url/file' are provided. 'svg' will be used.");
-  }
+function getExtension(path) {
+  return path?.split("?")[0].split(".").pop()?.toLowerCase();
+}
 
-  if (url && file) {
-    console.warn(
-      "Both 'url' and deprecated 'file' are provided. 'url' will be used."
-    );
-  }
+async function loadImageFromUrl(url) {
+  const img = new Image();
+  img.crossOrigin = "anonymous";
 
-  if (typeof svg === "string" && svg.trim()) {
-    return svg;
-  }
+  img.src = url;
+  await new Promise((resolve, reject) => {
+    img.onload = resolve;
+    img.onerror = reject;
+  });
 
-  if (url) {
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error(`Failed to fetch SVG: ${url} (${res.status})`);
-    }
-    return await res.text();
-  }
-
-  if (file) {
-    console.warn("The 'file' field is deprecated. Please use 'url' instead.");
-    const res = await fetch(file);
-    if (!res.ok) {
-      throw new Error(`Failed to fetch SVG: ${file} (${res.status})`);
-    }
-    return await res.text();
-  }
-
-  return null;
+  return img;
 }
 
 async function svgTextToImage(svgText) {
@@ -43,20 +25,53 @@ async function svgTextToImage(svgText) {
   const url = URL.createObjectURL(blob);
 
   try {
-    const img = new Image();
-    img.src = url;
-    await new Promise((resolve, reject) => {
-      img.onload = resolve;
-      img.onerror = reject;
-    });
-    return img;
+    return await loadImageFromUrl(url);
   } finally {
     URL.revokeObjectURL(url);
   }
 }
 
-export async function addImages(map, svgPalette) {
-  for (const { id, svg, url, file } of svgPalette) {
+async function getImage({ svg, url, file }) {
+  if (svg && (url || file)) {
+    console.warn("Both 'svg' and 'url/file' are provided. 'svg' will be used.");
+  }
+
+  if (url && file) {
+    console.warn(
+      "Both 'url' and deprecated 'file' are provided. 'url' will be used."
+    );
+  }
+
+  // 1. inline SVG
+  if (typeof svg === "string" && svg.trim()) {
+    return svgTextToImage(svg);
+  }
+
+  const src = url || file;
+  if (!src) return null;
+
+  const ext = getExtension(src);
+
+  // 2. SVG file
+  if (ext === "svg") {
+    const res = await fetch(src);
+    if (!res.ok) {
+      throw new Error(`Failed to fetch SVG: ${src} (${res.status})`);
+    }
+    const text = await res.text();
+    return svgTextToImage(text);
+  }
+
+  // 3. Raster image
+  if (["png", "jpg", "jpeg", "webp"].includes(ext)) {
+    return loadImageFromUrl(src);
+  }
+
+  throw new Error(`Unsupported image format: ${src}`);
+}
+
+export async function addImages(map, imagePalette) {
+  for (const { id, svg, url, file } of imagePalette) {
     try {
       if (!id) {
         console.warn("Missing image id. Skipping entry:", { svg, url, file });
@@ -68,13 +83,12 @@ export async function addImages(map, svgPalette) {
         continue;
       }
 
-      const svgText = await getSvgText({ svg, url, file });
-      if (!svgText) continue;
+      const img = await getImage({ svg, url, file });
+      if (!img) continue;
 
-      const img = await svgTextToImage(svgText);
       map.addImage(id, img);
     } catch (e) {
-      console.error(`Error processing SVG with id ${id}:`, e);
+      console.error(`Error processing image with id ${id}:`, e);
     }
   }
 }
