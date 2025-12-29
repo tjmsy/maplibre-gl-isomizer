@@ -30,37 +30,63 @@ function generateLayerId(index, symbolId, suffix = "") {
   return suffix ? `${index}-${symbolId}-${suffix}` : `${index}-${symbolId}`;
 }
 
-function resolveLayerPaint(symbol, hex) {
-  const paint = { ...symbol.paint };
+function resolveLayerStyle(symbol, hex) {
+  const paint = { ...(symbol.paint || {}) };
+  const layout = { ...(symbol.layout || {}) };
 
-  if (symbol.type === "line") {
-    paint["line-color"] = hex;
-  } else if (symbol.type === "fill") {
-    if (!("fill-pattern" in paint)) {
-      paint["fill-color"] = hex;
+  switch (symbol.type) {
+    case "line": {
+      paint["line-color"] = hex;
+
+      if (symbol.property["line-width(mm)"]) {
+        paint["line-width"] =
+          symbol.property["line-width(mm)"] * MM_TO_PX;
+      }
+
+      if (symbol.property["line-dasharray(mm)"]) {
+        paint["line-dasharray"] =
+          symbol.property["line-dasharray(mm)"].map(
+            (v) => v * MM_TO_PX
+          );
+      }
+      break;
+    }
+
+    case "fill": {
+      if (!("fill-pattern" in paint)) {
+        paint["fill-color"] = hex;
+      }
+      break;
+    }
+
+    case "symbol": {
+      if (symbol.property["image-id"]) {
+        layout["icon-image"] = symbol.property["image-id"];
+      }
+
+      if (symbol.property["icon-size(mm)"]) {
+        layout["icon-size"] =
+          symbol.property["icon-size(mm)"] * MM_TO_PX;
+      }
+      break;
+    }
+
+    case "background": {
+      break;
     }
   }
 
-  if (symbol.property["line-width(mm)"]) {
-    paint["line-width"] = symbol.property["line-width(mm)"] * MM_TO_PX;
-  }
-  if (symbol.property["line-dasharray(mm)"]) {
-    paint["line-dasharray"] = symbol.property["line-dasharray(mm)"].map(
-      (element) => element * MM_TO_PX
-    );
-  }
-
-  return paint;
+  return { paint, layout };
 }
 
-function createBaseLayer({ id, symbol, paint }) {
+function createBaseLayer({ id, symbol, paint, layout }) {
   return {
     id,
     type: symbol.type,
     ...withIf(symbol.minzoom, { minzoom: symbol.minzoom }),
     ...withIf(symbol.maxzoom, { maxzoom: symbol.maxzoom }),
-    ...withIf(symbol.layout, { layout: symbol.layout }),
-    paint,
+    ...withIf(Object.keys(layout).length, { layout }),
+    ...withIf(Object.keys(paint).length, { paint }),
   };
 }
 
@@ -109,12 +135,13 @@ function generateLayersFromRule(rule, symbols, colors) {
 
       const suffix = suffixParts.join("-");
 
-      const paint = resolveLayerPaint(symbol, hex);
+      const { paint, layout } = resolveLayerStyle(symbol, hex);
 
       const baseLayer = createBaseLayer({
         id: generateLayerId(index, symbolId, suffix),
         symbol,
         paint,
+        layout,
       });
 
       return withSource(baseLayer, link);
