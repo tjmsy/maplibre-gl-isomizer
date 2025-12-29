@@ -22,8 +22,25 @@ function getColorOrderIndex(colorKey, colors) {
   return `${paddedGroupIndex}-${paddedColorIndex}`;
 }
 
+function normalizeSymbolType(type) {
+  switch (type) {
+    case "point":
+      return "symbol";
+    case "area":
+      return "fill";
+    default:
+      return type;
+  }
+}
+
 function getSymbolFromPalette(symbolId, symbols) {
-  return symbols.find((s) => s.symbol_id === symbolId) || null;
+  const symbol = symbols.find((s) => s.symbol_id === symbolId);
+  if (!symbol) return null;
+
+  return {
+    ...symbol,
+    type: normalizeSymbolType(symbol.type),
+  };
 }
 
 function generateLayerId(index, symbolId, suffix = "") {
@@ -39,15 +56,13 @@ function resolveLayerStyle(symbol, hex) {
       paint["line-color"] = hex;
 
       if (symbol.property["line-width(mm)"]) {
-        paint["line-width"] =
-          symbol.property["line-width(mm)"] * MM_TO_PX;
+        paint["line-width"] = symbol.property["line-width(mm)"] * MM_TO_PX;
       }
 
       if (symbol.property["line-dasharray(mm)"]) {
-        paint["line-dasharray"] =
-          symbol.property["line-dasharray(mm)"].map(
-            (v) => v * MM_TO_PX
-          );
+        paint["line-dasharray"] = symbol.property["line-dasharray(mm)"].map(
+          (v) => v * MM_TO_PX
+        );
       }
       break;
     }
@@ -65,8 +80,7 @@ function resolveLayerStyle(symbol, hex) {
       }
 
       if (symbol.property["icon-size(mm)"]) {
-        layout["icon-size"] =
-          symbol.property["icon-size(mm)"] * MM_TO_PX;
+        layout["icon-size"] = symbol.property["icon-size(mm)"] * MM_TO_PX;
       }
       break;
     }
