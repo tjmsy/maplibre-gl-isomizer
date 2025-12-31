@@ -27,6 +27,15 @@ export async function isomizer(map, projectConfigPath) {
     await addSources(map, designPlan.sources);
     await addLayers(map, style.layers);
 
+    if (projectConfig.map) {
+      map.jumpTo({
+        center: projectConfig.map.center,
+        zoom: projectConfig.map.zoom,
+        bearing: projectConfig.map.bearing ?? 0,
+        pitch: projectConfig.map.pitch ?? 0,
+      });
+    }
+
     return map;
   } catch (error) {
     console.error("Error during isomizer process:", error);
