@@ -20,14 +20,14 @@ export async function isomizer(map, projectConfigPath) {
       designPlan.rules,
       designPlan.sources,
       symbolPalette["symbol-palette"],
-      colorPalette["color-palette"]
+      colorPalette["color-palette"],
     );
 
     await addImages(map, imagePalette["image-palette"]);
     await addSources(map, designPlan.sources);
     await addLayers(map, style.layers);
 
-    if (projectConfig.map) {
+    if (projectConfig.map && !window.location.hash) {
       map.jumpTo({
         center: projectConfig.map.center,
         zoom: projectConfig.map.zoom,
