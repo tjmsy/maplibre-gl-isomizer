@@ -15,16 +15,13 @@ function getColor(colorKey, colors) {
   return colors[groupIndex][group][colorIndex][color].hex;
 }
 
-function getColorOrderIndex(colorKey, colors) {
+function getColorOrder(colorKey, colors) {
   const [group, color] = colorKey.split(".");
 
   const groupIndex = colors.findIndex((item) => item[group]);
   const colorIndex = colors[groupIndex][group].findIndex((item) => item[color]);
 
-  const paddedGroupIndex = groupIndex.toString().padStart(2, "0");
-  const paddedColorIndex = colorIndex.toString().padStart(2, "0");
-
-  return `${paddedGroupIndex}-${paddedColorIndex}`;
+  return groupIndex * 100 + colorIndex;
 }
 
 function normalizeSymbolType(type) {
@@ -48,8 +45,8 @@ function getSymbolFromPalette(symbolId, symbols) {
   };
 }
 
-function generateLayerId(index, symbolId, suffix = "") {
-  return suffix ? `${index}-${symbolId}-${suffix}` : `${index}-${symbolId}`;
+function generateLayerId(symbolId, suffix = "") {
+  return suffix ? `${symbolId}-${suffix}` : `${symbolId}`;
 }
 
 function resolveLayerStyle(symbol, hex) {
@@ -60,16 +57,14 @@ function resolveLayerStyle(symbol, hex) {
     case "line": {
       paint["line-color"] = hex;
 
-      if (symbol.type === "line") {
-        if (symbol.property["line-width(mm)"]) {
-          paint["line-width"] = mmToPx(symbol.property["line-width(mm)"]);
-        }
+      if (symbol.property["line-width(mm)"]) {
+        paint["line-width"] = mmToPx(symbol.property["line-width(mm)"]);
+      }
 
-        if (symbol.property["line-dasharray(mm)"]) {
-          paint["line-dasharray"] = symbol.property["line-dasharray(mm)"].map(
-            (v) => mmToPx(v)
-          );
-        }
+      if (symbol.property["line-dasharray(mm)"]) {
+        paint["line-dasharray"] = symbol.property["line-dasharray(mm)"].map(
+          (v) => mmToPx(v),
+        );
       }
 
       break;
@@ -130,10 +125,11 @@ function generateLayersFromRule(rule, symbols, colors) {
       throw new Error(`Symbol not found for symbol_id: ${symbolId}`);
     }
 
-    if (symbol.type === "background") {
-      const colorKey = symbol.property["color-key"];
-      const hex = getColor(colorKey, colors);
+    const colorKey = symbol.property["color-key"];
+    const hex = getColor(colorKey, colors);
+    const order = getColorOrder(colorKey, colors);
 
+    if (symbol.type === "background") {
       return [
         {
           id: "background",
@@ -141,17 +137,16 @@ function generateLayersFromRule(rule, symbols, colors) {
           paint: {
             "background-color": hex,
           },
+          metadata: {
+            "isomizer:order": 0,
+          },
         },
       ];
     }
 
     return rule.links.map((link, linkIndex) => {
-      const colorKey = symbol.property["color-key"];
-      const hex = getColor(colorKey, colors);
-      const index = getColorOrderIndex(colorKey, colors);
-
       const suffixParts = [link.source, link["source-layer"], linkIndex].filter(
-        Boolean
+        Boolean,
       );
 
       const suffix = suffixParts.join("-");
@@ -159,13 +154,19 @@ function generateLayersFromRule(rule, symbols, colors) {
       const { paint, layout } = resolveLayerStyle(symbol, hex);
 
       const baseLayer = createBaseLayer({
-        id: generateLayerId(index, symbolId, suffix),
+        id: generateLayerId(symbolId, suffix),
         symbol,
         paint,
         layout,
       });
 
-      return withSource(baseLayer, link);
+      return {
+        ...withSource(baseLayer, link),
+        metadata: {
+          ...(baseLayer.metadata || {}),
+          "isomizer:order": order,
+        },
+      };
     });
   });
 }
@@ -176,20 +177,17 @@ async function generateLayers(rules, symbols, colors) {
       return generateLayersFromRule(rule, symbols, colors);
     } catch (error) {
       console.error(
-        `Failed to process rule with symbol_id ${rule.symbol_id}: ${error.message}`
+        `Failed to process rule with symbol_id ${rule.symbol_id}: ${error.message}`,
       );
       return [];
     }
   });
 
-  layers.sort((a, b) => a.id.localeCompare(b.id));
-
-  const bgIndex = layers.findIndex((l) => l.type === "background");
-
-  if (bgIndex > -1) {
-    const [bg] = layers.splice(bgIndex, 1);
-    layers.unshift(bg);
-  }
+  layers.sort((a, b) => {
+    const oa = a.metadata?.["isomizer:order"] ?? Infinity;
+    const ob = b.metadata?.["isomizer:order"] ?? Infinity;
+    return oa - ob;
+  });
 
   return layers;
 }
