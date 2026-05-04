@@ -133,11 +133,10 @@ function generateLayersFromRule(rule, symbols, colors) {
     if (symbol.type === "background") {
       const colorKey = symbol.property["color-key"];
       const hex = getColor(colorKey, colors);
-      const index = getColorOrderIndex(colorKey, colors);
 
       return [
         {
-          id: generateLayerId(index, symbolId),
+          id: "background",
           type: "background",
           paint: {
             "background-color": hex,
@@ -184,6 +183,13 @@ async function generateLayers(rules, symbols, colors) {
   });
 
   layers.sort((a, b) => a.id.localeCompare(b.id));
+
+  const bgIndex = layers.findIndex((l) => l.type === "background");
+
+  if (bgIndex > -1) {
+    const [bg] = layers.splice(bgIndex, 1);
+    layers.unshift(bg);
+  }
 
   return layers;
 }
