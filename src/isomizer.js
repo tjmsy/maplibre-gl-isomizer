@@ -16,11 +16,14 @@ export async function isomizer(map, projectConfigPath) {
         loadYaml(projectConfig.resources["image-palette"].file),
       ]);
 
+    const projectId = projectConfig.project?.id;
+
     const style = await generateStyle(
       designPlan.rules,
       designPlan.sources,
       symbolPalette["symbol-palette"],
       colorPalette["color-palette"],
+      projectId,
     );
 
     await addImages(map, imagePalette["image-palette"]);

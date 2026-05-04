@@ -118,7 +118,7 @@ function withSource(layer, link) {
   };
 }
 
-function generateLayersFromRule(rule, symbols, colors) {
+function generateLayersFromRule(rule, symbols, colors, projectId) {
   return rule.symbol_id.flatMap((symbolId) => {
     const symbol = getSymbolFromPalette(symbolId, symbols);
     if (!symbol) {
@@ -138,6 +138,7 @@ function generateLayersFromRule(rule, symbols, colors) {
             "background-color": hex,
           },
           metadata: {
+            ...(projectId && { "isomizer:project": projectId }),
             "isomizer:order": 0,
           },
         },
@@ -164,6 +165,7 @@ function generateLayersFromRule(rule, symbols, colors) {
         ...withSource(baseLayer, link),
         metadata: {
           ...(baseLayer.metadata || {}),
+          ...(projectId && { "isomizer:project": projectId }),
           "isomizer:order": order,
         },
       };
@@ -171,10 +173,10 @@ function generateLayersFromRule(rule, symbols, colors) {
   });
 }
 
-async function generateLayers(rules, symbols, colors) {
+async function generateLayers(rules, symbols, colors, projectId) {
   const layers = rules.flatMap((rule) => {
     try {
-      return generateLayersFromRule(rule, symbols, colors);
+      return generateLayersFromRule(rule, symbols, colors, projectId);
     } catch (error) {
       console.error(
         `Failed to process rule with symbol_id ${rule.symbol_id}: ${error.message}`,
@@ -192,9 +194,15 @@ async function generateLayers(rules, symbols, colors) {
   return layers;
 }
 
-export async function generateStyle(rules, sources, symbols, colors) {
+export async function generateStyle(
+  rules,
+  sources,
+  symbols,
+  colors,
+  projectId,
+) {
   try {
-    const layers = await generateLayers(rules, symbols, colors);
+    const layers = await generateLayers(rules, symbols, colors, projectId);
 
     const style = {
       version: 8,
