@@ -41,12 +41,19 @@ export async function isomizer(map, projectConfigPath) {
     await addStyleAssets(map, projectConfig.map);
     await addLayers(map, style.layers);
 
-    if (projectConfig.map && !window.location.hash) {
+    const mapConfig = projectConfig.map;
+
+    if (
+      mapConfig &&
+      !window.location.hash &&
+      mapConfig.center &&
+      typeof mapConfig.zoom === "number"
+    ) {
       map.jumpTo({
-        center: projectConfig.map.center,
-        zoom: projectConfig.map.zoom,
-        bearing: projectConfig.map.bearing ?? 0,
-        pitch: projectConfig.map.pitch ?? 0,
+        center: mapConfig.center,
+        zoom: mapConfig.zoom,
+        bearing: mapConfig.bearing ?? 0,
+        pitch: mapConfig.pitch ?? 0,
       });
     }
 
