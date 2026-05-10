@@ -5,7 +5,7 @@ import { addLayers } from "./addLayers.js";
 import { addStyleAssets } from "./addStyleAssets.js";
 import { generateStyle } from "./generateStyle.js";
 
-export async function isomizer(map, projectConfigPath) {
+export async function isomizer(map, projectConfigPath, options = {}) {
   try {
     const projectConfig = await loadYaml(projectConfigPath);
 
@@ -31,7 +31,7 @@ export async function isomizer(map, projectConfigPath) {
       symbolPalette["symbol-palette"],
       colorPalette["color-palette"],
       projectId,
-      { sprite, glyphs },
+      { sprite, glyphs, metadata: options.metadata },
     );
 
     const images = imagePalette?.["image-palette"] ?? [];

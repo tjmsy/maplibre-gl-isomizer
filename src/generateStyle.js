@@ -118,7 +118,7 @@ function withSource(layer, link) {
   };
 }
 
-function generateLayersFromRule(rule, symbols, colors, projectId) {
+function generateLayersFromRule(rule, symbols, colors) {
   const symbolIds = Array.isArray(rule.symbol_id)
     ? rule.symbol_id
     : [rule.symbol_id];
@@ -149,7 +149,6 @@ function generateLayersFromRule(rule, symbols, colors, projectId) {
         {
           ...baseLayer,
           metadata: {
-            ...(projectId && { "isomizer:project": projectId }),
             "isomizer:order": 0,
           },
         },
@@ -176,7 +175,6 @@ function generateLayersFromRule(rule, symbols, colors, projectId) {
         ...withSource(baseLayer, link),
         metadata: {
           ...(baseLayer.metadata || {}),
-          ...(projectId && { "isomizer:project": projectId }),
           "isomizer:order": order,
         },
       };
@@ -184,10 +182,16 @@ function generateLayersFromRule(rule, symbols, colors, projectId) {
   });
 }
 
-async function generateLayers(rules, symbols, colors, projectId) {
+async function generateLayers(
+  rules,
+  symbols,
+  colors,
+  projectId,
+  extraMetadata,
+) {
   const layers = rules.flatMap((rule) => {
     try {
-      return generateLayersFromRule(rule, symbols, colors, projectId);
+      return generateLayersFromRule(rule, symbols, colors);
     } catch (error) {
       console.error(
         `Failed to process rule with symbol_id ${rule.symbol_id}: ${error.message}`,
@@ -202,6 +206,16 @@ async function generateLayers(rules, symbols, colors, projectId) {
     return oa - ob;
   });
 
+  if (extraMetadata && Object.keys(extraMetadata).length) {
+    layers.forEach((layer) => {
+      layer.metadata = {
+        ...(layer.metadata || {}),
+        ...(projectId && { "isomizer:project": projectId }),
+        ...extraMetadata,
+      };
+    });
+  }
+
   return layers;
 }
 
@@ -214,7 +228,13 @@ export async function generateStyle(
   options = {},
 ) {
   try {
-    const layers = await generateLayers(rules, symbols, colors, projectId);
+    const layers = await generateLayers(
+      rules,
+      symbols,
+      colors,
+      projectId,
+      options.metadata,
+    );
 
     const style = {
       version: 8,
