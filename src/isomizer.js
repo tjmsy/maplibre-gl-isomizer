@@ -2,6 +2,7 @@ import { loadYaml } from "./loadYaml.js";
 import { addImages } from "./addImages.js";
 import { addSources } from "./addSources.js";
 import { addLayers } from "./addLayers.js";
+import { addStyleAssets } from "./addStyleAssets.js";
 import { generateStyle } from "./generateStyle.js";
 
 export async function isomizer(map, projectConfigPath) {
@@ -21,6 +22,8 @@ export async function isomizer(map, projectConfigPath) {
       ]);
 
     const projectId = projectConfig.project?.id;
+    const sprite = projectConfig.map?.sprite;
+    const glyphs = projectConfig.map?.glyphs;
 
     const style = await generateStyle(
       designPlan.rules,
@@ -28,12 +31,14 @@ export async function isomizer(map, projectConfigPath) {
       symbolPalette["symbol-palette"],
       colorPalette["color-palette"],
       projectId,
+      { sprite, glyphs },
     );
 
     const images = imagePalette?.["image-palette"] ?? [];
 
-    await addImages(map, imagePalette?.["image-palette"] ?? []);
+    await addImages(map, images);
     await addSources(map, designPlan.sources);
+    await addStyleAssets(map, projectConfig.map);
     await addLayers(map, style.layers);
 
     if (projectConfig.map && !window.location.hash) {

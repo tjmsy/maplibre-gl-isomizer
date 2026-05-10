@@ -119,7 +119,11 @@ function withSource(layer, link) {
 }
 
 function generateLayersFromRule(rule, symbols, colors, projectId) {
-  return rule.symbol_id.flatMap((symbolId) => {
+  const symbolIds = Array.isArray(rule.symbol_id)
+    ? rule.symbol_id
+    : [rule.symbol_id];
+
+  return symbolIds.flatMap((symbolId) => {
     const symbol = getSymbolFromPalette(symbolId, symbols);
     if (!symbol) {
       throw new Error(`Symbol not found for symbol_id: ${symbolId}`);
@@ -207,6 +211,7 @@ export async function generateStyle(
   symbols,
   colors,
   projectId,
+  options = {},
 ) {
   try {
     const layers = await generateLayers(rules, symbols, colors, projectId);
@@ -215,6 +220,8 @@ export async function generateStyle(
       version: 8,
       sources,
       layers,
+      ...withIf(options.glyphs, { glyphs: options.glyphs }),
+      ...withIf(options.sprite, { sprite: options.sprite }),
     };
 
     return style;
