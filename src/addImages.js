@@ -70,7 +70,7 @@ async function getImage({ svg, url, file }) {
   throw new Error(`Unsupported image format: ${src}`);
 }
 
-export async function addImages(map, imagePalette) {
+export async function addImages(map, imagePalette = []) {
   for (const { id, svg, url, file } of imagePalette) {
     try {
       if (!id) {

@@ -8,12 +8,28 @@ export async function isomizer(map, projectConfigPath) {
   try {
     const projectConfig = await loadYaml(projectConfigPath);
 
+    const designPlanPromise = loadYaml(
+      projectConfig.resources["design-plan"].file,
+    );
+
+    const symbolPalettePromise = loadYaml(
+      projectConfig.resources["symbol-palette"].file,
+    );
+
+    const colorPalettePromise = loadYaml(
+      projectConfig.resources["color-palette"].file,
+    );
+
+    const imagePalettePromise = projectConfig.resources["image-palette"]?.file
+      ? loadYaml(projectConfig.resources["image-palette"].file)
+      : Promise.resolve(null);
+
     const [designPlan, symbolPalette, colorPalette, imagePalette] =
       await Promise.all([
-        loadYaml(projectConfig.resources["design-plan"].file),
-        loadYaml(projectConfig.resources["symbol-palette"].file),
-        loadYaml(projectConfig.resources["color-palette"].file),
-        loadYaml(projectConfig.resources["image-palette"].file),
+        designPlanPromise,
+        symbolPalettePromise,
+        colorPalettePromise,
+        imagePalettePromise,
       ]);
 
     const projectId = projectConfig.project?.id;
@@ -25,6 +41,8 @@ export async function isomizer(map, projectConfigPath) {
       colorPalette["color-palette"],
       projectId,
     );
+
+    const images = imagePalette?.["image-palette"] ?? [];
 
     await addImages(map, imagePalette["image-palette"]);
     await addSources(map, designPlan.sources);
