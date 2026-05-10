@@ -130,13 +130,20 @@ function generateLayersFromRule(rule, symbols, colors, projectId) {
     const order = getColorOrder(colorKey, colors);
 
     if (symbol.type === "background") {
+      const { paint, layout } = resolveLayerStyle(symbol, hex);
+
+      paint["background-color"] = hex;
+
+      const baseLayer = createBaseLayer({
+        id: "background",
+        symbol,
+        paint,
+        layout,
+      });
+
       return [
         {
-          id: "background",
-          type: "background",
-          paint: {
-            "background-color": hex,
-          },
+          ...baseLayer,
           metadata: {
             ...(projectId && { "isomizer:project": projectId }),
             "isomizer:order": 0,
