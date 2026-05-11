@@ -1,9 +1,12 @@
-export async function addSources(map, sourcesJson) {
-  Object.entries(sourcesJson).forEach(([sourceId, sourceData]) => {
-    if (map.getSource(sourceId)) {
-      return;
-    }
+export async function addSources(map, sources = {}) {
+  const added = [];
 
-    map.addSource(sourceId, sourceData);
-  });
+  for (const [id, source] of Object.entries(sources)) {
+    if (map.getSource(id)) continue;
+
+    map.addSource(id, source);
+    added.push(id);
+  }
+
+  return added;
 }

@@ -1,28 +1,33 @@
 export async function addStyleAssets(map, mapConfig = {}) {
+  let appliedGlyphs = null;
+  const addedSprites = [];
+
   if (mapConfig.glyphs) {
     map.setGlyphs(mapConfig.glyphs);
+    appliedGlyphs = mapConfig.glyphs;
   }
 
-  if (!mapConfig.sprite) return;
+  if (!mapConfig.sprite) {
+    return { sprites: addedSprites, glyphs: appliedGlyphs };
+  }
 
   const sprites = Array.isArray(mapConfig.sprite)
     ? mapConfig.sprite
     : [{ id: "default", url: mapConfig.sprite }];
 
   for (const { id, url } of sprites) {
-    if (!id || typeof url !== "string") {
-      console.error(`Invalid sprite config:`, { id, url });
-      continue;
-    }
-
     try {
       map.addSprite(id, url);
+      addedSprites.push(id);
     } catch (e) {
-      if (e?.message?.includes("already exists")) {
-        console.warn(`Sprite '${id}' already exists`);
-      } else {
+      if (!e?.message?.includes("already exists")) {
         console.error(`Failed to add sprite '${id}':`, e);
       }
     }
   }
+
+  return {
+    sprites: addedSprites,
+    glyphs: appliedGlyphs,
+  };
 }

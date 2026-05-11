@@ -18,7 +18,7 @@ async function loadImageFromUrl(url) {
 async function svgTextToImage(svgText) {
   const cleaned = svgText.replace(
     /<!--[\s\S]*?-->|<script[\s\S]*?<\/script>/g,
-    ""
+    "",
   );
 
   const blob = new Blob([cleaned], { type: "image/svg+xml" });
@@ -38,7 +38,7 @@ async function getImage({ svg, url, file }) {
 
   if (url && file) {
     console.warn(
-      "Both 'url' and deprecated 'file' are provided. 'url' will be used."
+      "Both 'url' and deprecated 'file' are provided. 'url' will be used.",
     );
   }
 
@@ -71,6 +71,8 @@ async function getImage({ svg, url, file }) {
 }
 
 export async function addImages(map, imagePalette = []) {
+  const added = [];
+
   for (const { id, svg, url, file } of imagePalette) {
     try {
       if (!id) {
@@ -87,8 +89,13 @@ export async function addImages(map, imagePalette = []) {
       if (!img) continue;
 
       map.addImage(id, img);
+
+      added.push(id);
+
     } catch (e) {
       console.error(`Error processing image with id ${id}:`, e);
     }
   }
+
+  return added;
 }

@@ -36,10 +36,13 @@ export async function isomizer(map, projectConfigPath, options = {}) {
 
     const images = imagePalette?.["image-palette"] ?? [];
 
-    await addImages(map, images);
-    await addSources(map, designPlan.sources);
-    await addStyleAssets(map, projectConfig.map);
-    await addLayers(map, style.layers);
+    const addedImages = await addImages(map, images);
+    const addedSources = await addSources(map, designPlan.sources);
+
+    const { sprites: addedSprites, glyphs: appliedGlyphs } =
+      await addStyleAssets(map, projectConfig.map);
+
+    const addedLayers = await addLayers(map, style.layers);
 
     const mapConfig = projectConfig.map;
 
@@ -57,7 +60,14 @@ export async function isomizer(map, projectConfigPath, options = {}) {
       });
     }
 
-    return map;
+    return {
+      projectId,
+      layers: addedLayers,
+      sources: addedSources,
+      images: addedImages,
+      sprites: addedSprites,
+      glyphs: appliedGlyphs,
+    };
   } catch (error) {
     console.error("Error during isomizer process:", error);
   }
