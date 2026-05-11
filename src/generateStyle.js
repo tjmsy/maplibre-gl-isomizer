@@ -45,7 +45,8 @@ function getSymbolFromPalette(symbolId, symbols) {
   };
 }
 
-function generateLayerId(symbolId, suffix = "") {
+function generateLayerId(symbolId, suffix = "", symbol) {
+  if (symbol.type == "hillshade") return `${symbolId}`;
   return suffix ? `${symbolId}-${suffix}` : `${symbolId}`;
 }
 
@@ -88,6 +89,10 @@ function resolveLayerStyle(symbol, hex) {
       break;
     }
 
+    case "hillshade": {
+      break;
+    }
+
     case "background": {
       break;
     }
@@ -107,11 +112,13 @@ function createBaseLayer({ id, symbol, paint, layout }) {
   };
 }
 
-function withSource(layer, link) {
+function withSource(layer, link, symbol) {
+  const hasSourceLayer = symbol.type !== "hillshade";
+
   return {
     ...layer,
     ...withIf(link.source, { source: link.source }),
-    ...withIf(link["source-layer"], {
+    ...withIf(hasSourceLayer && link["source-layer"], {
       "source-layer": link["source-layer"],
     }),
     ...withIf(link.filter, { filter: link.filter }),
@@ -139,7 +146,7 @@ function generateLayersFromRule(rule, symbols, colors) {
       paint["background-color"] = hex;
 
       const baseLayer = createBaseLayer({
-        id: "background",
+        id: symbolId,
         symbol,
         paint,
         layout,
@@ -149,6 +156,7 @@ function generateLayersFromRule(rule, symbols, colors) {
         {
           ...baseLayer,
           metadata: {
+            ...(baseLayer.metadata || {}),
             "isomizer:order": 0,
           },
         },
@@ -159,20 +167,19 @@ function generateLayersFromRule(rule, symbols, colors) {
       const suffixParts = [link.source, link["source-layer"], linkIndex].filter(
         Boolean,
       );
-
       const suffix = suffixParts.join("-");
 
       const { paint, layout } = resolveLayerStyle(symbol, hex);
 
       const baseLayer = createBaseLayer({
-        id: generateLayerId(symbolId, suffix),
+        id: generateLayerId(symbolId, suffix, symbol),
         symbol,
         paint,
         layout,
       });
 
       return {
-        ...withSource(baseLayer, link),
+        ...withSource(baseLayer, link, symbol),
         metadata: {
           ...(baseLayer.metadata || {}),
           "isomizer:order": order,
