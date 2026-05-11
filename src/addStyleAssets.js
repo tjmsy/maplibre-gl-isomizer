@@ -1,5 +1,5 @@
 export async function addStyleAssets(map, mapConfig = {}) {
-  if (mapConfig.glyphs && !map.getStyle()?.glyphs) {
+  if (mapConfig.glyphs) {
     map.setGlyphs(mapConfig.glyphs);
   }
 
