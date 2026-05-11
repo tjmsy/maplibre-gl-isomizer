@@ -20,7 +20,7 @@ export async function addStyleAssets(map, mapConfig = {}) {
       map.addSprite(id, url);
       addedSprites.push(id);
     } catch (e) {
-      if (!e?.message?.includes("already exists")) {
+      if (!e?.message?.includes("is duplicated")) {
         console.error(`Failed to add sprite '${id}':`, e);
       }
     }
