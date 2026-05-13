@@ -81,7 +81,6 @@ export async function addImages(map, imagePalette = []) {
       }
 
       if (map.hasImage(id)) {
-        console.warn(`Image id '${id}' already exists. Skipping.`);
         continue;
       }
 
