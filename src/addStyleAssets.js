@@ -8,21 +8,37 @@ export async function addStyleAssets(map, mapConfig = {}) {
   }
 
   if (!mapConfig.sprite) {
-    return { sprites: addedSprites, glyphs: appliedGlyphs };
+    return {
+      sprites: addedSprites,
+      glyphs: appliedGlyphs,
+    };
   }
 
   const sprites = Array.isArray(mapConfig.sprite)
     ? mapConfig.sprite
     : [{ id: "default", url: mapConfig.sprite }];
 
+  const existingSprites = map.getSprite() ?? [];
+
+  const existingIds = new Set(existingSprites.map((sprite) => sprite.id));
+
   for (const { id, url } of sprites) {
+    if (!id || typeof url !== "string") {
+      console.error(`Invalid sprite config:`, { id, url });
+      continue;
+    }
+
+    if (existingIds.has(id)) {
+      continue;
+    }
+
     try {
       map.addSprite(id, url);
+
       addedSprites.push(id);
+      existingIds.add(id);
     } catch (e) {
-      if (!e?.message?.includes("is duplicated")) {
-        console.error(`Failed to add sprite '${id}':`, e);
-      }
+      console.error(`Failed to add sprite '${id}':`, e);
     }
   }
 
