@@ -1,4 +1,4 @@
-export async function addLayers(map, layers = []) {
+export async function addLayers(map, layers = [], options = {}) {
   const added = [];
 
   layers.forEach((layer) => {
@@ -13,7 +13,7 @@ export async function addLayers(map, layers = []) {
     }
 
     try {
-      map.addLayer(layer);
+      map.addLayer(layer, resolveBeforeId(map, layer, options));
 
       added.push(layer.id);
     } catch (error) {
@@ -22,4 +22,22 @@ export async function addLayers(map, layers = []) {
   });
 
   return added;
+}
+
+function resolveBeforeId(map, layer, options) {
+  let beforeId = options.beforeId;
+
+  if (!options.enableLayerGrouping) return beforeId;
+
+  const role = layer.metadata?.role;
+
+  if (role === "basemap") {
+    const firstNonBase = map
+      .getStyle()
+      .layers.find((l) => l.metadata?.role !== "basemap");
+
+    return firstNonBase?.id ?? beforeId;
+  }
+
+  return beforeId;
 }

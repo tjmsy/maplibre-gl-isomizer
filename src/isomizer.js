@@ -42,7 +42,10 @@ export async function isomizer(map, projectConfigPath, options = {}) {
     const { sprites: addedSprites, glyphs: appliedGlyphs } =
       await addStyleAssets(map, projectConfig.map);
 
-    const addedLayers = await addLayers(map, style.layers);
+    const addedLayers = await addLayers(map, style.layers, {
+      beforeId: options.beforeId,
+      enableLayerGrouping: options.enableLayerGrouping,
+    });
 
     const mapConfig = projectConfig.map;
 
